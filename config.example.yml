@@ -16,7 +16,9 @@ manager:
       disk-mb: 500000
       cpu: 800
 
-  egg-file: "egg-game-server.json"
+  egg:
+    id: 1                  # set after you import the egg into the new panel
+    docker-image: "ghcr.io/pterodactyl/yolks:java_21"
 
   git:
     pull-user: "YOUR_GITHUB_USER"
