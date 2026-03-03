@@ -31,6 +31,43 @@ public class PteroAppClient {
                 .build();
     }
 
+    // ── Node Configuration (Wings config) ─────────────────────────────────
+
+    public String getNodeConfiguration(int nodeId) {
+        // Returns raw YAML — not JSON, so we just return the string directly
+        try {
+            return restClient.get()
+                    .uri("/api/application/nodes/" + nodeId + "/configuration")
+                    .retrieve()
+                    .body(String.class);
+        } catch (HttpClientErrorException e) {
+            throw new PteroApiException(e.getStatusCode().value(), e.getResponseBodyAsString());
+        } catch (Exception e) {
+            throw new PteroApiException("GET node configuration failed", e);
+        }
+    }
+
+// ── Eggs ───────────────────────────────────────────────────────────────
+
+    public EggDto getEgg(int nestId, int eggId) {
+        final PteroDataWrapper<EggDto> response = get(
+                "/api/application/nests/" + nestId + "/eggs/" + eggId,
+                new TypeReference<>() {}
+        );
+        return response.getAttributes();
+    }
+
+// ── Users ──────────────────────────────────────────────────────────────
+
+    public List<UserDto> listUsers() {
+        final PteroListWrapper<UserDto> response = get(
+                "/api/application/users",
+                new TypeReference<>() {}
+        );
+        return unwrapList(response);
+    }
+    
+    
     // ── Locations ──────────────────────────────────────────────────────────
 
     public List<LocationDto> listLocations() {

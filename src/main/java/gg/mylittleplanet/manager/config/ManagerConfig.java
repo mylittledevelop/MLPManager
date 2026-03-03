@@ -16,5 +16,6 @@ public class ManagerConfig {
     private EggConfig egg;
     private GitConfig git;
     private NetworkConfig network;
+    private InfrastructureConfig infrastructure = new InfrastructureConfig();
     private List<ServerDefinition> servers = new ArrayList<>();
 }

@@ -17,7 +17,8 @@ manager:
       cpu: 800
 
   egg:
-    id: 1                  # set after you import the egg into the new panel
+    nest-id: 1       # find in panel → Nests → your nest
+    id: 1            # find in panel → Nests → your nest → your egg
     docker-image: "ghcr.io/pterodactyl/yolks:java_21"
 
   git:
@@ -26,6 +27,10 @@ manager:
     script-user: "YOUR_GITHUB_USER"
     script-url: "https://github.com/YOUR_ORG/YOUR_SCRIPT_REPO"
     script-branch: "main"
+
+  infrastructure:
+    wings-container-name: "mlpinfra-wings-1"
+    wings-config-path: "/etc/pterodactyl/config.yml"
 
   network:
     startup-order:

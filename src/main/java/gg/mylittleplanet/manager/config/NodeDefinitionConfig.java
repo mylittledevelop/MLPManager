@@ -2,6 +2,8 @@ package gg.mylittleplanet.manager.config;
 
 import lombok.Data;
 
+import java.util.stream.IntStream;
+
 @Data
 public class NodeDefinitionConfig {
     private String name;
@@ -14,5 +16,9 @@ public class NodeDefinitionConfig {
     public static class PortRange {
         private int from;
         private int to;
+
+        public IntStream portStream() {
+            return IntStream.rangeClosed(from, to);
+        }
     }
 }

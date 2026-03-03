@@ -2,9 +2,49 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>MLP Manager</title>
+    <style>
+        body { font-family: monospace; padding: 2rem; background: #1a1a1a; color: #e0e0e0; }
+        h1 { color: #ffffff; }
+        .info    { color: #64b5f6; }
+        .created { color: #81c784; }
+        .updated { color: #ffb74d; }
+        .skipped { color: #9e9e9e; }
+        .error   { color: #e57373; }
+        .log-box { background: #0d0d0d; padding: 1rem; border-radius: 4px; margin-top: 1rem; }
+        .log-entry { margin: 0.2rem 0; }
+        form { margin-top: 1rem; }
+        button {
+            background: #1565c0; color: white; border: none;
+            padding: 0.6rem 1.4rem; cursor: pointer; font-size: 1rem;
+            border-radius: 4px;
+        }
+        button:hover { background: #1976d2; }
+        .summary { margin-top: 0.5rem; font-size: 0.9rem; color: #9e9e9e; }
+    </style>
 </head>
 <body>
+
 <h1>MLP Manager</h1>
-<p>Manager is running. Config loaded for network: <span th:text="${serverCount}"></span> servers defined.</p>
+<p class="summary">
+    <span th:text="${serverCount}">0</span> servers defined in config.
+</p>
+
+<form method="post" action="/apply">
+    <button type="submit">▶ Apply</button>
+</form>
+
+<div class="log-box" th:if="${result != null}">
+    <div th:each="entry : ${result.log}"
+         th:classappend="${'log-entry ' + entry.status.name().toLowerCase()}"
+         th:text="${'[' + entry.status + '] ' + entry.message}">
+    </div>
+    <div th:if="${result.success}" class="created" style="margin-top:0.5rem;">
+        ✓ Apply completed successfully
+    </div>
+    <div th:if="${!result.success}" class="error" style="margin-top:0.5rem;">
+        ✗ Apply completed with errors
+    </div>
+</div>
+
 </body>
 </html>
