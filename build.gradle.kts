@@ -24,6 +24,7 @@ repositories {
 }
 
 dependencies {
+    implementation("org.jetbrains:annotations:26.1.0")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")

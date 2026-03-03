@@ -6,3 +6,7 @@ spring:
     import: "optional:file:/app/config.yml"
   thymeleaf:
     cache: false
+  jackson:
+    default-property-inclusion: non_null
+    deserialization:
+      fail-on-unknown-properties: false
