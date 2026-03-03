@@ -1,0 +1,67 @@
+manager:
+  panel:
+    base-url: "http://YOUR_VPS_IP:8090"
+    app-api-key: "ptla_XXXX"
+    client-api-key: "ptlc_XXXX"
+
+  node:
+    name: "main-node"
+    location-name: "main"
+    fqdn: "YOUR_VPS_IP"
+    port-range:
+      from: 25565
+      to: 25600
+    resources:
+      memory-mb: 65536
+      disk-mb: 500000
+      cpu: 800
+
+  egg:
+    id: 1                  # set after you import the egg into the new panel
+    docker-image: "ghcr.io/pterodactyl/yolks:java_21"
+
+  git:
+    pull-user: "YOUR_GITHUB_USER"
+    pull-token: "ghp_XXXX"
+    script-user: "YOUR_GITHUB_USER"
+    script-url: "https://github.com/YOUR_ORG/YOUR_SCRIPT_REPO"
+    script-branch: "main"
+
+  network:
+    startup-order:
+      - PROXY
+      - LOBBY
+      - PLANETS
+      - NETHER
+
+  servers:
+    - id: "proxy"
+      type: PROXY
+      fixed-port: 25565
+      resources:
+        memory-mb: 2048
+        disk-mb: 10000
+        cpu: 100
+      env:
+        GIT_PULL_BRANCH: "main"
+        GIT_SCRIPT: "pull"
+
+    - id: "lobby1"
+      type: LOBBY
+      resources:
+        memory-mb: 4096
+        disk-mb: 10000
+        cpu: 100
+      env:
+        GIT_PULL_BRANCH: "main"
+        GIT_SCRIPT: "pull"
+
+    - id: "planets1"
+      type: PLANETS
+      resources:
+        memory-mb: 8192
+        disk-mb: 20000
+        cpu: 200
+      env:
+        GIT_PULL_BRANCH: "main"
+        GIT_SCRIPT: "pull"
