@@ -76,9 +76,12 @@ public class ServerReconciler {
                 .environment(env)
                 .limits(CreateServerRequest.Limits.builder()
                         .memory(server.getResources().getMemoryMb())
+                        .swap(0)
                         .disk(server.getResources().getDiskMb())
+                        .io(500)
                         .cpu(server.getResources().getCpu())
-                        .build())
+                        .build()
+                )
                 .featureLimits(CreateServerRequest.FeatureLimits.builder()
                         .databases(0)
                         .backups(0)
@@ -112,16 +115,32 @@ public class ServerReconciler {
     private Map<String, String> buildEnvironment(ServerDefinition server) {
         final Map<String, String> env = new LinkedHashMap<>();
 
-        // Git credentials from global git config
-        env.put("GIT_USERNAME", config.getGit().getPullUser());
-        env.put("GIT_ACCESS_TOKEN", config.getGit().getPullToken());
-        env.put("SERVER_SCRIPT_REPO", config.getGit().getScriptUrl());
+        // ── Git script (global) ────────────────────────────────────────────
+        env.put("GIT_SCRIPT_URL", config.getGit().getScriptUrl());
+        env.put("GIT_SCRIPT_BRANCH", config.getGit().getScriptBranch());
         env.put("SERVER_SCRIPT_USERNAME", config.getGit().getScriptUser());
         env.put("SERVER_SCRIPT_ACCESS_TOKEN", config.getGit().getPullToken());
-        env.put("SERVER_SCRIPT_BRANCH", config.getGit().getScriptBranch());
-        env.put("SERVER_ID", server.getId());
 
-        // Per-server env overrides from config — these take priority
+        // ── Git pull (per server) ──────────────────────────────────────────
+        // Only include GIT_PULL_URL if it's explicitly configured
+        if (server.getGitPullUrl() != null && !server.getGitPullUrl().isBlank()) {
+            env.put("GIT_PULL_URL", server.getGitPullUrl());
+        }
+        env.put("GIT_USERNAME", config.getGit().getPullUser());
+        env.put("GIT_ACCESS_TOKEN", config.getGit().getPullToken());
+
+        // ── Egg variables (global defaults) ───────────────────────────────
+        env.put("SERVER_JARFILE", config.getEgg().getServerJarfile());
+        env.put("BUILD_DIR", config.getEgg().getBuildDir());
+        env.put("BUILD_NUMBER", config.getEgg().getBuildNumber());
+        env.put("START_SCRIPT", config.getEgg().getStartScript());
+
+        // ── Per server ─────────────────────────────────────────────────────
+        env.put("SERVER_ID", server.getId());
+        // Note: SERVER_TYPE is NOT set automatically - it's egg-specific and has constraints
+        // If your egg requires SERVER_TYPE, add it explicitly in the env section of your config
+
+        // ── Per-server env overrides from config — always last ─────────────
         env.putAll(server.getEnv());
 
         return env;

@@ -9,7 +9,8 @@ import java.util.Map;
 public class ServerDefinition {
     private String id;
     private String type;
-    private Integer fixedPort;       // null = pick from pool automatically
+    private Integer fixedPort;
+    private String gitPullUrl;       // git repo containing this server's files
     private ResourcesConfig resources;
     private Map<String, String> env = new HashMap<>();
 }

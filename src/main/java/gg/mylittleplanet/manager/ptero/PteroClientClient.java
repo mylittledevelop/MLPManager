@@ -28,7 +28,7 @@ public class PteroClientClient {
         this.restClient = RestClient.builder()
                 .baseUrl(config.getPanel().getBaseUrl())
                 .defaultHeader("Authorization", "Bearer " + config.getPanel().getClientApiKey())
-                .defaultHeader("Accept", "application/json")
+                .defaultHeader("Accept", "application/vnd.pterodactyl.v1+json")
                 .defaultHeader("Content-Type", "application/json")
                 .build();
     }

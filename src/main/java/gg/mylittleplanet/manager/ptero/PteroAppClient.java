@@ -23,10 +23,17 @@ public class PteroAppClient {
 
     public PteroAppClient(ManagerConfig config, ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
+        final String baseUrl = config.getPanel().getBaseUrl();
+        final String apiKey = config.getPanel().getAppApiKey();
+        
+        log.info("Initializing PteroAppClient with baseUrl: {}", baseUrl);
+        log.info("API Key configured: {}", apiKey != null && !apiKey.isBlank());
+        log.debug("API Key prefix: {}", apiKey != null ? apiKey.substring(0, Math.min(10, apiKey.length())) + "..." : "null");
+        
         this.restClient = RestClient.builder()
-                .baseUrl(config.getPanel().getBaseUrl())
-                .defaultHeader("Authorization", "Bearer " + config.getPanel().getAppApiKey())
-                .defaultHeader("Accept", "application/json")
+                .baseUrl(baseUrl)
+                .defaultHeader("Authorization", "Bearer " + apiKey)
+                .defaultHeader("Accept", "application/vnd.pterodactyl.v1+json")
                 .defaultHeader("Content-Type", "application/json")
                 .build();
     }
@@ -166,14 +173,18 @@ public class PteroAppClient {
 
     private <T> T get(String path, TypeReference<T> type) {
         try {
+            log.debug("GET request to: {}", path);
             final String body = restClient.get()
                     .uri(path)
                     .retrieve()
                     .body(String.class);
+            if (body == null || body.isBlank()) return null;
             return objectMapper.readValue(body, type);
         } catch (HttpClientErrorException e) {
+            log.error("GET {} failed with status {}: {}", path, e.getStatusCode(), e.getResponseBodyAsString());
             throw new PteroApiException(e.getStatusCode().value(), e.getResponseBodyAsString());
         } catch (Exception e) {
+            log.error("GET {} failed", path, e);
             throw new PteroApiException("GET " + path + " failed", e);
         }
     }

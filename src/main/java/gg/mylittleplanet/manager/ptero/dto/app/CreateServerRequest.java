@@ -43,8 +43,14 @@ public class CreateServerRequest {
         @JsonProperty("memory")
         private int memory;
 
+        @JsonProperty("swap")
+        private int swap;       // 0 = disabled, -1 = unlimited
+
         @JsonProperty("disk")
         private int disk;
+
+        @JsonProperty("io")
+        private int io;         // 500 is the default/recommended value
 
         @JsonProperty("cpu")
         private int cpu;

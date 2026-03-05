@@ -3,7 +3,9 @@ server:
 
 spring:
   config:
-    import: "optional:file:/app/config.yml"
+    import:
+      - "optional:file:./config.yml"
+      - "optional:file:/app/config.yml"
   thymeleaf:
     cache: false
   jackson:
