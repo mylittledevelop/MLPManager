@@ -20,9 +20,6 @@ public class ManagerConfig {
     private NodeDefinitionConfig node;
     
     @Nullable
-    private EggConfig egg;
-    
-    @Nullable
     private GitConfig git;
     
     @Nullable
@@ -31,6 +28,29 @@ public class ManagerConfig {
     @NotNull
     private InfrastructureConfig infrastructure = new InfrastructureConfig();
     
-    @NotNull
-    private List<ServerDefinition> servers = new ArrayList<>();
+    @Nullable
+    private ServerGroup proxy;
+    
+    @Nullable
+    private ServerGroup gameservers;
+    
+    @Data
+    public static class ServerGroup {
+        @Nullable
+        private EggConfig egg;
+        
+        @NotNull
+        private List<ServerDefinition> servers = new ArrayList<>();
+    }
+    
+    public @NotNull List<@NotNull ServerDefinition> getServers() {
+        final List<@NotNull ServerDefinition> all = new ArrayList<>();
+        if (proxy != null) {
+            all.addAll(proxy.getServers());
+        }
+        if (gameservers != null) {
+            all.addAll(gameservers.getServers());
+        }
+        return all;
+    }
 }

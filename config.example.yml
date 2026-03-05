@@ -16,10 +16,61 @@ manager:
       disk-mb: 500000
       cpu: 800
 
-  egg:
-    nest-id: 1       # find in panel → Nests → your nest
-    id: 1            # find in panel → Nests → your nest → your egg
-    docker-image: "ghcr.io/pterodactyl/yolks:java_21"
+  proxy:
+    egg:
+      nest-id: 1       # find in panel → Nests → your nest
+      id: 1            # proxy egg ID (e.g., Velocity, BungeeCord, Waterfall)
+      docker-image: "ghcr.io/pterodactyl/yolks:java_21"
+      server-jarfile: "proxy.jar"
+      build-dir: "build"
+      build-number: "latest"
+      start-script: "start.sh"
+    
+    servers:
+      - id: "proxy"
+        type: PROXY
+        fixed-port: 25565
+        git-pull-url: "https://github.com/YOUR_ORG/YOUR_PROXY_REPO"
+        resources:
+          memory-mb: 2048
+          disk-mb: 10000
+          cpu: 100
+        env:
+          GIT_PULL_BRANCH: "main"
+          GIT_SCRIPT: "pull"
+
+  gameservers:
+    egg:
+      nest-id: 1       # find in panel → Nests → your nest
+      id: 15           # game server egg ID
+      docker-image: "ghcr.io/pterodactyl/yolks:java_21"
+      server-jarfile: "server.jar"
+      build-dir: "build"
+      build-number: "latest"
+      start-script: "start.sh"
+    
+    servers:
+      - id: "lobby1"
+        type: LOBBY
+        git-pull-url: "https://github.com/YOUR_ORG/YOUR_SERVER_REPO"
+        resources:
+          memory-mb: 4096
+          disk-mb: 10000
+          cpu: 100
+        env:
+          GIT_PULL_BRANCH: "main"
+          GIT_SCRIPT: "pull"
+
+      - id: "planets1"
+        type: PLANETS
+        git-pull-url: "https://github.com/YOUR_ORG/YOUR_SERVER_REPO"
+        resources:
+          memory-mb: 8192
+          disk-mb: 20000
+          cpu: 200
+        env:
+          GIT_PULL_BRANCH: "main"
+          GIT_SCRIPT: "pull"
 
   git:
     pull-user: "YOUR_GITHUB_USER"
@@ -38,35 +89,3 @@ manager:
       - LOBBY
       - PLANETS
       - NETHER
-
-  servers:
-    - id: "proxy"
-      type: PROXY
-      fixed-port: 25565
-      resources:
-        memory-mb: 2048
-        disk-mb: 10000
-        cpu: 100
-      env:
-        GIT_PULL_BRANCH: "main"
-        GIT_SCRIPT: "pull"
-
-    - id: "lobby1"
-      type: LOBBY
-      resources:
-        memory-mb: 4096
-        disk-mb: 10000
-        cpu: 100
-      env:
-        GIT_PULL_BRANCH: "main"
-        GIT_SCRIPT: "pull"
-
-    - id: "planets1"
-      type: PLANETS
-      resources:
-        memory-mb: 8192
-        disk-mb: 20000
-        cpu: 200
-      env:
-        GIT_PULL_BRANCH: "main"
-        GIT_SCRIPT: "pull"

@@ -214,8 +214,9 @@ public class PteroAppClient {
     private <T> @Nullable T post(String path, Object body, TypeReference<T> type) {
         try {
             log.debug("POST request to: {}", path);
+            String jsonBody = null;
             try {
-                String jsonBody = objectMapper.writeValueAsString(body);
+                jsonBody = objectMapper.writeValueAsString(body);
                 log.debug("Request body: {}", jsonBody);
             } catch (Exception e) {
                 log.debug("Could not serialize request body for logging", e);
@@ -227,8 +228,11 @@ public class PteroAppClient {
                     .body(String.class);
             return parseJsonResponse(response, type);
         } catch (HttpClientErrorException e) {
-            throw new PteroApiException(e.getStatusCode().value(), e.getResponseBodyAsString());
+            String errorBody = e.getResponseBodyAsString();
+            log.error("POST {} failed with status {}: {}", path, e.getStatusCode(), errorBody);
+            throw new PteroApiException(e.getStatusCode().value(), errorBody);
         } catch (Exception e) {
+            log.error("POST {} failed", path, e);
             throw new PteroApiException("POST " + path + " failed", e);
         }
     }

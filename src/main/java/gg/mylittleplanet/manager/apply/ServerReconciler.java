@@ -1,5 +1,6 @@
 package gg.mylittleplanet.manager.apply;
 
+import gg.mylittleplanet.manager.config.EggConfig;
 import gg.mylittleplanet.manager.config.ManagerConfig;
 import gg.mylittleplanet.manager.config.ServerDefinition;
 import gg.mylittleplanet.manager.ptero.PteroAppClient;
@@ -23,16 +24,6 @@ public class ServerReconciler {
     public void reconcile(int nodeId, ApplyResult result) {
         // Fetch everything we need upfront
         final int adminUserId = findAdminUserId(result);
-        final EggDto egg = appClient.getEgg(config.getEgg().getNestId(), config.getEgg().getId());
-        result.info("Using egg '" + egg.getName() + "' with startup: " + egg.getStartup());
-        
-        // Log egg variables for debugging
-        if (egg.getVariables() != null && !egg.getVariables().isEmpty()) {
-            result.info("Egg variables:");
-            for (final EggDto.EggVariable var : egg.getVariables()) {
-                result.info("  - " + var.getEnvVariable() + " (rules: " + var.getRules() + ")");
-            }
-        }
 
         final List<ServerDto> existingServers = appClient.listServers();
         final Map<String, ServerDto> existingByName = existingServers.stream()
@@ -45,24 +36,65 @@ public class ServerReconciler {
                 .map(AllocationDto::getId)
                 .collect(Collectors.toCollection(HashSet::new));
 
-        for (final ServerDefinition server : config.getServers()) {
-            try {
-                reconcileServer(server, existingByName, allAllocations,
-                        claimedAllocationIds, adminUserId, egg, result);
-            } catch (Exception e) {
-                result.error("Failed to reconcile server '" + server.getId() + "': " + e.getMessage());
-                log.error("Server reconcile failed for {}", server.getId(), e);
+        // Reconcile proxy servers
+        if (config.getProxy() != null && config.getProxy().getEgg() != null) {
+            final EggDto proxyEgg = appClient.getEgg(
+                    config.getProxy().getEgg().getNestId(), 
+                    config.getProxy().getEgg().getId()
+            );
+            result.info("Using proxy egg '" + proxyEgg.getName() + "' with startup: " + proxyEgg.getStartup());
+            logEggVariables(proxyEgg, result);
+
+            for (final ServerDefinition server : config.getProxy().getServers()) {
+                try {
+                    reconcileServer(nodeId, server, existingByName, allAllocations,
+                            claimedAllocationIds, adminUserId, proxyEgg, config.getProxy().getEgg(), result);
+                } catch (Exception e) {
+                    result.error("Failed to reconcile proxy server '" + server.getId() + "': " + e.getMessage());
+                    log.error("Proxy server reconcile failed for {}", server.getId(), e);
+                }
+            }
+        }
+
+        // Reconcile game servers
+        if (config.getGameservers() != null && config.getGameservers().getEgg() != null) {
+            final EggDto gameEgg = appClient.getEgg(
+                    config.getGameservers().getEgg().getNestId(), 
+                    config.getGameservers().getEgg().getId()
+            );
+            result.info("Using game server egg '" + gameEgg.getName() + "' with startup: " + gameEgg.getStartup());
+            logEggVariables(gameEgg, result);
+
+            for (final ServerDefinition server : config.getGameservers().getServers()) {
+                try {
+                    reconcileServer(nodeId, server, existingByName, allAllocations,
+                            claimedAllocationIds, adminUserId, gameEgg, config.getGameservers().getEgg(), result);
+                } catch (Exception e) {
+                    result.error("Failed to reconcile game server '" + server.getId() + "': " + e.getMessage());
+                    log.error("Game server reconcile failed for {}", server.getId(), e);
+                }
+            }
+        }
+    }
+
+    private void logEggVariables(EggDto egg, ApplyResult result) {
+        if (egg.getVariables() != null && !egg.getVariables().isEmpty()) {
+            result.info("Egg variables:");
+            for (final EggDto.EggVariable var : egg.getVariables()) {
+                result.info("  - " + var.getEnvVariable() + " (rules: " + var.getRules() + ")");
             }
         }
     }
 
     private void reconcileServer(
+            int nodeId,
             @NotNull ServerDefinition server,
             @NotNull Map<String, ServerDto> existingByName,
             @NotNull List<AllocationDto> allAllocations,
             @NotNull Set<Integer> claimedAllocationIds,
             int adminUserId,
             @NotNull EggDto egg,
+            @NotNull EggConfig eggConfig,
             @NotNull ApplyResult result
     ) {
         // Validate server ID
@@ -80,13 +112,14 @@ public class ServerReconciler {
         final AllocationDto allocation = findAllocation(server, allAllocations, claimedAllocationIds);
         claimedAllocationIds.add(allocation.getId());
 
-        final Map<String, String> env = buildEnvironment(server);
+        final Map<String, String> env = buildEnvironment(server, eggConfig);
 
         appClient.createServer(CreateServerRequest.builder()
                 .name(server.getId())
                 .userId(adminUserId)
-                .eggId(config.getEgg().getId())
-                .dockerImage(config.getEgg().getDockerImage())
+                .nodeId(nodeId)
+                .eggId(eggConfig.getId())
+                .dockerImage(eggConfig.getDockerImage())
                 .startup(egg.getStartup())
                 .environment(env)
                 .limits(CreateServerRequest.Limits.builder()
@@ -129,7 +162,7 @@ public class ServerReconciler {
                         "No free allocation available for server '" + server.getId() + "'"));
     }
 
-    private @NotNull Map<String, String> buildEnvironment(@NotNull ServerDefinition server) {
+    private @NotNull Map<String, String> buildEnvironment(@NotNull ServerDefinition server, @NotNull EggConfig eggConfig) {
         final Map<String, String> env = new LinkedHashMap<>();
 
         // ── Git script (global) ────────────────────────────────────────────
@@ -146,11 +179,11 @@ public class ServerReconciler {
         env.put("GIT_USERNAME", config.getGit().getPullUser());
         env.put("GIT_ACCESS_TOKEN", config.getGit().getPullToken());
 
-        // ── Egg variables (global defaults) ───────────────────────────────
-        env.put("SERVER_JARFILE", config.getEgg().getServerJarfile());
-        env.put("BUILD_DIR", config.getEgg().getBuildDir());
-        env.put("BUILD_NUMBER", config.getEgg().getBuildNumber());
-        env.put("START_SCRIPT", config.getEgg().getStartScript());
+        // ── Egg variables (from egg config) ───────────────────────────────
+        env.put("SERVER_JARFILE", eggConfig.getServerJarfile());
+        env.put("BUILD_DIR", eggConfig.getBuildDir());
+        env.put("BUILD_NUMBER", eggConfig.getBuildNumber());
+        env.put("START_SCRIPT", eggConfig.getStartScript());
 
         // ── Per server ─────────────────────────────────────────────────────
         env.put("SERVER_ID", server.getId());

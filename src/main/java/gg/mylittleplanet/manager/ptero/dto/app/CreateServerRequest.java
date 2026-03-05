@@ -16,6 +16,9 @@ public class CreateServerRequest {
     @JsonProperty("user")
     private int userId;
 
+    @JsonProperty("node")
+    private int nodeId;
+
     @JsonProperty("egg")
     private int eggId;
 
