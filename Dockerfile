@@ -12,6 +12,6 @@ COPY --from=build /app/build/libs/*.jar app.jar
 # Install docker CLI for Wings container restart capability
 RUN apk add --no-cache docker-cli
 
-EXPOSE 8081
+EXPOSE 8083
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
