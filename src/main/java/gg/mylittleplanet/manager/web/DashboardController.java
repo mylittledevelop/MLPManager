@@ -15,6 +15,7 @@ public class DashboardController {
     @GetMapping("/")
     public String dashboard(Model model) {
         model.addAttribute("serverCount", config.getServers().size());
+        model.addAttribute("servers", config.getServers());
         model.addAttribute("result", null);
         return "dashboard";
     }
