@@ -4,6 +4,7 @@ import gg.mylittleplanet.manager.config.ManagerConfig;
 import gg.mylittleplanet.manager.ptero.PteroAppClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -40,7 +41,7 @@ public class WingsConfigWriter {
         waitForWings(result);
     }
 
-    private void restartWings(ApplyResult result) {
+    private void restartWings(@NotNull ApplyResult result) {
         final String containerName = config.getInfrastructure().getWingsContainerName();
         try {
             result.info("Restarting Wings container '" + containerName + "'...");
@@ -56,16 +57,19 @@ public class WingsConfigWriter {
         } catch (IOException | InterruptedException e) {
             Thread.currentThread().interrupt();
             result.error("Failed to restart Wings: " + e.getMessage());
+            throw new RuntimeException("Wings restart failed", e);
         }
     }
 
-    private void waitForWings(ApplyResult result) {
+    private void waitForWings(@NotNull ApplyResult result) {
         result.info("Waiting 20 seconds for Wings to come online...");
         try {
             Thread.sleep(20_000);
             result.info("Wings should be online");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            result.error("Wait for Wings was interrupted");
+            throw new RuntimeException("Wings startup wait interrupted", e);
         }
     }
 

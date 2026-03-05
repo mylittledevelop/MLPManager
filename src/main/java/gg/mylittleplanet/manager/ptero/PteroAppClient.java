@@ -7,6 +7,8 @@ import gg.mylittleplanet.manager.ptero.dto.PteroDataWrapper;
 import gg.mylittleplanet.manager.ptero.dto.PteroListWrapper;
 import gg.mylittleplanet.manager.ptero.dto.app.*;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
@@ -40,13 +42,17 @@ public class PteroAppClient {
 
     // ── Node Configuration (Wings config) ─────────────────────────────────
 
-    public String getNodeConfiguration(int nodeId) {
+    public @NotNull String getNodeConfiguration(int nodeId) {
         // Returns raw YAML — not JSON, so we just return the string directly
         try {
-            return restClient.get()
+            final String body = restClient.get()
                     .uri("/api/application/nodes/" + nodeId + "/configuration")
                     .retrieve()
                     .body(String.class);
+            if (body == null) {
+                throw new PteroApiException("Node configuration returned empty response", null);
+            }
+            return body;
         } catch (HttpClientErrorException e) {
             throw new PteroApiException(e.getStatusCode().value(), e.getResponseBodyAsString());
         } catch (Exception e) {
@@ -56,17 +62,17 @@ public class PteroAppClient {
 
 // ── Eggs ───────────────────────────────────────────────────────────────
 
-    public EggDto getEgg(int nestId, int eggId) {
+    public @Nullable EggDto getEgg(int nestId, int eggId) {
         final PteroDataWrapper<EggDto> response = get(
-                "/api/application/nests/" + nestId + "/eggs/" + eggId,
+                "/api/application/nests/" + nestId + "/eggs/" + eggId + "?include=variables",
                 new TypeReference<>() {}
         );
-        return response.getAttributes();
+        return response != null ? response.getAttributes() : null;
     }
 
 // ── Users ──────────────────────────────────────────────────────────────
 
-    public List<UserDto> listUsers() {
+    public @NotNull List<UserDto> listUsers() {
         final PteroListWrapper<UserDto> response = get(
                 "/api/application/users",
                 new TypeReference<>() {}
@@ -77,7 +83,7 @@ public class PteroAppClient {
     
     // ── Locations ──────────────────────────────────────────────────────────
 
-    public List<LocationDto> listLocations() {
+    public @NotNull List<LocationDto> listLocations() {
         final PteroListWrapper<LocationDto> response = get(
                 "/api/application/locations",
                 new TypeReference<>() {}
@@ -85,19 +91,22 @@ public class PteroAppClient {
         return unwrapList(response);
     }
 
-    public LocationDto createLocation(String shortCode, String description) {
+    public @NotNull LocationDto createLocation(@NotNull String shortCode, @NotNull String description) {
         log.info("Creating location '{}'", shortCode);
         final PteroDataWrapper<LocationDto> response = post(
                 "/api/application/locations",
                 new CreateLocationRequest(shortCode, description),
                 new TypeReference<>() {}
         );
+        if (response == null) {
+            throw new PteroApiException("Location creation returned null response", null);
+        }
         return response.getAttributes();
     }
 
     // ── Nodes ──────────────────────────────────────────────────────────────
 
-    public List<NodeDto> listNodes() {
+    public @NotNull List<NodeDto> listNodes() {
         final PteroListWrapper<NodeDto> response = get(
                 "/api/application/nodes",
                 new TypeReference<>() {}
@@ -105,19 +114,22 @@ public class PteroAppClient {
         return unwrapList(response);
     }
 
-    public NodeDto createNode(CreateNodeRequest request) {
+    public @NotNull NodeDto createNode(@NotNull CreateNodeRequest request) {
         log.info("Creating node '{}'", request.getName());
         final PteroDataWrapper<NodeDto> response = post(
                 "/api/application/nodes",
                 request,
                 new TypeReference<>() {}
         );
+        if (response == null) {
+            throw new PteroApiException("Node creation returned null response", null);
+        }
         return response.getAttributes();
     }
 
     // ── Allocations ────────────────────────────────────────────────────────
 
-    public List<AllocationDto> listAllocations(int nodeId) {
+    public @NotNull List<AllocationDto> listAllocations(int nodeId) {
         final PteroListWrapper<AllocationDto> response = get(
                 "/api/application/nodes/" + nodeId + "/allocations",
                 new TypeReference<>() {}
@@ -125,7 +137,7 @@ public class PteroAppClient {
         return unwrapList(response);
     }
 
-    public void createAllocations(int nodeId, String ip, List<String> ports) {
+    public void createAllocations(int nodeId, @NotNull String ip, @NotNull List<String> ports) {
         log.info("Creating allocations on node {} for ports {}", nodeId, ports);
         post(
                 "/api/application/nodes/" + nodeId + "/allocations",
@@ -136,7 +148,7 @@ public class PteroAppClient {
 
     // ── Servers ────────────────────────────────────────────────────────────
 
-    public List<ServerDto> listServers() {
+    public @NotNull List<ServerDto> listServers() {
         final PteroListWrapper<ServerDto> response = get(
                 "/api/application/servers",
                 new TypeReference<>() {}
@@ -144,23 +156,29 @@ public class PteroAppClient {
         return unwrapList(response);
     }
 
-    public ServerDto createServer(CreateServerRequest request) {
+    public @NotNull ServerDto createServer(@NotNull CreateServerRequest request) {
         log.info("Creating server '{}'", request.getName());
         final PteroDataWrapper<ServerDto> response = post(
                 "/api/application/servers",
                 request,
                 new TypeReference<>() {}
         );
+        if (response == null) {
+            throw new PteroApiException("Server creation returned null response", null);
+        }
         return response.getAttributes();
     }
 
-    public ServerDto updateStartup(int serverId, UpdateStartupRequest request) {
+    public @NotNull ServerDto updateStartup(int serverId, @NotNull UpdateStartupRequest request) {
         log.info("Updating startup config for server {}", serverId);
         final PteroDataWrapper<ServerDto> response = patch(
                 "/api/application/servers/" + serverId + "/startup",
                 request,
                 new TypeReference<>() {}
         );
+        if (response == null) {
+            throw new PteroApiException("Startup update returned null response", null);
+        }
         return response.getAttributes();
     }
 
@@ -171,15 +189,19 @@ public class PteroAppClient {
 
     // ── HTTP helpers ───────────────────────────────────────────────────────
 
-    private <T> T get(String path, TypeReference<T> type) {
+    private <T> @Nullable T parseJsonResponse(@Nullable String body, TypeReference<T> type) throws Exception {
+        if (body == null || body.isBlank()) return null;
+        return objectMapper.readValue(body, type);
+    }
+
+    private <T> @Nullable T get(String path, TypeReference<T> type) {
         try {
             log.debug("GET request to: {}", path);
             final String body = restClient.get()
                     .uri(path)
                     .retrieve()
                     .body(String.class);
-            if (body == null || body.isBlank()) return null;
-            return objectMapper.readValue(body, type);
+            return parseJsonResponse(body, type);
         } catch (HttpClientErrorException e) {
             log.error("GET {} failed with status {}: {}", path, e.getStatusCode(), e.getResponseBodyAsString());
             throw new PteroApiException(e.getStatusCode().value(), e.getResponseBodyAsString());
@@ -189,15 +211,21 @@ public class PteroAppClient {
         }
     }
 
-    private <T> T post(String path, Object body, TypeReference<T> type) {
+    private <T> @Nullable T post(String path, Object body, TypeReference<T> type) {
         try {
+            log.debug("POST request to: {}", path);
+            try {
+                String jsonBody = objectMapper.writeValueAsString(body);
+                log.debug("Request body: {}", jsonBody);
+            } catch (Exception e) {
+                log.debug("Could not serialize request body for logging", e);
+            }
             final String response = restClient.post()
                     .uri(path)
                     .body(body)
                     .retrieve()
                     .body(String.class);
-            if (response == null || response.isBlank()) return null;
-            return objectMapper.readValue(response, type);
+            return parseJsonResponse(response, type);
         } catch (HttpClientErrorException e) {
             throw new PteroApiException(e.getStatusCode().value(), e.getResponseBodyAsString());
         } catch (Exception e) {
@@ -205,15 +233,14 @@ public class PteroAppClient {
         }
     }
 
-    private <T> T patch(String path, Object body, TypeReference<T> type) {
+    private <T> @Nullable T patch(String path, Object body, TypeReference<T> type) {
         try {
             final String response = restClient.patch()
                     .uri(path)
                     .body(body)
                     .retrieve()
                     .body(String.class);
-            if (response == null || response.isBlank()) return null;
-            return objectMapper.readValue(response, type);
+            return parseJsonResponse(response, type);
         } catch (HttpClientErrorException e) {
             throw new PteroApiException(e.getStatusCode().value(), e.getResponseBodyAsString());
         } catch (Exception e) {
@@ -237,7 +264,7 @@ public class PteroAppClient {
         }
     }
 
-    private <T> List<T> unwrapList(PteroListWrapper<T> wrapper) {
+    private <T> @NotNull List<T> unwrapList(@Nullable PteroListWrapper<T> wrapper) {
         if (wrapper == null || wrapper.getData() == null) return List.of();
         return wrapper.getData().stream()
                 .map(PteroDataWrapper::getAttributes)

@@ -54,6 +54,9 @@ public class CreateServerRequest {
 
         @JsonProperty("cpu")
         private int cpu;
+
+        @JsonProperty("oom_disabled")
+        private boolean oomDisabled;
     }
 
     @Data
@@ -61,6 +64,9 @@ public class CreateServerRequest {
     public static class FeatureLimits {
         @JsonProperty("databases")
         private int databases;
+
+        @JsonProperty("allocations")
+        private int allocations;
 
         @JsonProperty("backups")
         private int backups;

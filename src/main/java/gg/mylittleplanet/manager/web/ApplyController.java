@@ -4,6 +4,7 @@ import gg.mylittleplanet.manager.apply.ApplyResult;
 import gg.mylittleplanet.manager.apply.ApplyService;
 import gg.mylittleplanet.manager.config.ManagerConfig;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,7 +17,7 @@ public class ApplyController {
     private final ManagerConfig config;
 
     @PostMapping("/apply")
-    public String apply(Model model) {
+    public @NotNull String apply(@NotNull Model model) {
         final ApplyResult result = applyService.apply();
         model.addAttribute("result", result);
         model.addAttribute("serverCount", config.getServers().size());

@@ -6,6 +6,7 @@ import gg.mylittleplanet.manager.ptero.PteroAppClient;
 import gg.mylittleplanet.manager.ptero.dto.app.AllocationDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -20,7 +21,7 @@ public class AllocationReconciler {
     private final PteroAppClient appClient;
     private final ManagerConfig config;
 
-    public void reconcile(int nodeId, ApplyResult result) {
+    public void reconcile(int nodeId, @NotNull ApplyResult result) {
         final NodeDefinitionConfig.PortRange range = config.getNode().getPortRange();
         final List<AllocationDto> existing = appClient.listAllocations(nodeId);
 

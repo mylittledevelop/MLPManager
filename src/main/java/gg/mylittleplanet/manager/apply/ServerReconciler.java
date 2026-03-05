@@ -6,6 +6,7 @@ import gg.mylittleplanet.manager.ptero.PteroAppClient;
 import gg.mylittleplanet.manager.ptero.dto.app.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -24,6 +25,14 @@ public class ServerReconciler {
         final int adminUserId = findAdminUserId(result);
         final EggDto egg = appClient.getEgg(config.getEgg().getNestId(), config.getEgg().getId());
         result.info("Using egg '" + egg.getName() + "' with startup: " + egg.getStartup());
+        
+        // Log egg variables for debugging
+        if (egg.getVariables() != null && !egg.getVariables().isEmpty()) {
+            result.info("Egg variables:");
+            for (final EggDto.EggVariable var : egg.getVariables()) {
+                result.info("  - " + var.getEnvVariable() + " (rules: " + var.getRules() + ")");
+            }
+        }
 
         final List<ServerDto> existingServers = appClient.listServers();
         final Map<String, ServerDto> existingByName = existingServers.stream()
@@ -48,14 +57,20 @@ public class ServerReconciler {
     }
 
     private void reconcileServer(
-            ServerDefinition server,
-            Map<String, ServerDto> existingByName,
-            List<AllocationDto> allAllocations,
-            Set<Integer> claimedAllocationIds,
+            @NotNull ServerDefinition server,
+            @NotNull Map<String, ServerDto> existingByName,
+            @NotNull List<AllocationDto> allAllocations,
+            @NotNull Set<Integer> claimedAllocationIds,
             int adminUserId,
-            EggDto egg,
-            ApplyResult result
+            @NotNull EggDto egg,
+            @NotNull ApplyResult result
     ) {
+        // Validate server ID
+        if (server.getId() == null || server.getId().isBlank()) {
+            result.error("Server ID cannot be empty");
+            return;
+        }
+
         if (existingByName.containsKey(server.getId())) {
             result.skipped("Server '" + server.getId() + "' already exists");
             // Drift detection can be added here later
@@ -80,10 +95,12 @@ public class ServerReconciler {
                         .disk(server.getResources().getDiskMb())
                         .io(500)
                         .cpu(server.getResources().getCpu())
+                        .oomDisabled(false)
                         .build()
                 )
                 .featureLimits(CreateServerRequest.FeatureLimits.builder()
                         .databases(0)
+                        .allocations(0)
                         .backups(0)
                         .build())
                 .allocation(CreateServerRequest.AllocationRequest.of(allocation.getId()))
@@ -92,10 +109,10 @@ public class ServerReconciler {
         result.created("Server '" + server.getId() + "' created on port " + allocation.getPort());
     }
 
-    private AllocationDto findAllocation(
-            ServerDefinition server,
-            List<AllocationDto> allocations,
-            Set<Integer> claimedIds
+    private @NotNull AllocationDto findAllocation(
+            @NotNull ServerDefinition server,
+            @NotNull List<AllocationDto> allocations,
+            @NotNull Set<Integer> claimedIds
     ) {
         if (server.getFixedPort() != null) {
             return allocations.stream()
@@ -112,7 +129,7 @@ public class ServerReconciler {
                         "No free allocation available for server '" + server.getId() + "'"));
     }
 
-    private Map<String, String> buildEnvironment(ServerDefinition server) {
+    private @NotNull Map<String, String> buildEnvironment(@NotNull ServerDefinition server) {
         final Map<String, String> env = new LinkedHashMap<>();
 
         // ── Git script (global) ────────────────────────────────────────────
@@ -137,8 +154,9 @@ public class ServerReconciler {
 
         // ── Per server ─────────────────────────────────────────────────────
         env.put("SERVER_ID", server.getId());
-        // Note: SERVER_TYPE is NOT set automatically - it's egg-specific and has constraints
-        // If your egg requires SERVER_TYPE, add it explicitly in the env section of your config
+
+        if (server.getType() != null && !server.getType().isBlank()) 
+            env.put("SERVER_TYPE", server.getType());
 
         // ── Per-server env overrides from config — always last ─────────────
         env.putAll(server.getEnv());
@@ -146,7 +164,7 @@ public class ServerReconciler {
         return env;
     }
 
-    private int findAdminUserId(ApplyResult result) {
+    private int findAdminUserId(@NotNull ApplyResult result) {
         return appClient.listUsers().stream()
                 .filter(UserDto::isRootAdmin)
                 .findFirst()

@@ -10,6 +10,8 @@ import gg.mylittleplanet.manager.ptero.dto.client.PowerRequest;
 import gg.mylittleplanet.manager.ptero.dto.client.SendCommandRequest;
 import gg.mylittleplanet.manager.ptero.dto.client.ServerResourcesDto;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -35,7 +37,7 @@ public class PteroClientClient {
 
     // ── Servers ────────────────────────────────────────────────────────────
 
-    public List<ClientServerDto> listServers() {
+    public @NotNull List<ClientServerDto> listServers() {
         final PteroListWrapper<ClientServerDto> response = get(
                 "/api/client",
                 new TypeReference<>() {}
@@ -43,43 +45,43 @@ public class PteroClientClient {
         return unwrapList(response);
     }
 
-    public ServerResourcesDto getResources(String serverUuid) {
+    public @Nullable ServerResourcesDto getResources(@NotNull String serverUuid) {
         final PteroDataWrapper<ServerResourcesDto> response = get(
                 "/api/client/servers/" + serverUuid + "/resources",
                 new TypeReference<>() {}
         );
-        return response.getAttributes();
+        return response != null ? response.getAttributes() : null;
     }
 
     // ── Power ──────────────────────────────────────────────────────────────
 
-    public void start(String serverUuid) {
+    public void start(@NotNull String serverUuid) {
         log.info("Sending start signal to server {}", serverUuid);
         sendPower(serverUuid, PowerRequest.start());
     }
 
-    public void stop(String serverUuid) {
+    public void stop(@NotNull String serverUuid) {
         log.info("Sending stop signal to server {}", serverUuid);
         sendPower(serverUuid, PowerRequest.stop());
     }
 
-    public void restart(String serverUuid) {
+    public void restart(@NotNull String serverUuid) {
         log.info("Sending restart signal to server {}", serverUuid);
         sendPower(serverUuid, PowerRequest.restart());
     }
 
-    public void kill(String serverUuid) {
+    public void kill(@NotNull String serverUuid) {
         log.warn("Sending kill signal to server {}", serverUuid);
         sendPower(serverUuid, PowerRequest.kill());
     }
 
-    private void sendPower(String serverUuid, PowerRequest request) {
+    private void sendPower(@NotNull String serverUuid, @NotNull PowerRequest request) {
         post("/api/client/servers/" + serverUuid + "/power", request);
     }
 
     // ── Console ────────────────────────────────────────────────────────────
 
-    public void sendCommand(String serverUuid, String command) {
+    public void sendCommand(@NotNull String serverUuid, @NotNull String command) {
         log.info("Sending command to {}: {}", serverUuid, command);
         post("/api/client/servers/" + serverUuid + "/command",
                 new SendCommandRequest(command));
@@ -87,12 +89,13 @@ public class PteroClientClient {
 
     // ── HTTP helpers ───────────────────────────────────────────────────────
 
-    private <T> T get(String path, TypeReference<T> type) {
+    private <T> @Nullable T get(@NotNull String path, @NotNull TypeReference<T> type) {
         try {
             final String body = restClient.get()
                     .uri(path)
                     .retrieve()
                     .body(String.class);
+            if (body == null || body.isBlank()) return null;
             return objectMapper.readValue(body, type);
         } catch (HttpClientErrorException e) {
             throw new PteroApiException(e.getStatusCode().value(), e.getResponseBodyAsString());
@@ -101,7 +104,7 @@ public class PteroClientClient {
         }
     }
 
-    private void post(String path, Object body) {
+    private void post(@NotNull String path, @NotNull Object body) {
         try {
             restClient.post()
                     .uri(path)
@@ -115,7 +118,7 @@ public class PteroClientClient {
         }
     }
 
-    private <T> List<T> unwrapList(PteroListWrapper<T> wrapper) {
+    private <T> @NotNull List<T> unwrapList(@Nullable PteroListWrapper<T> wrapper) {
         if (wrapper == null || wrapper.getData() == null) return List.of();
         return wrapper.getData().stream()
                 .map(PteroDataWrapper::getAttributes)

@@ -8,5 +8,10 @@ RUN gradle bootJar -x test -q
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
+
+# Install docker CLI for Wings container restart capability
+RUN apk add --no-cache docker-cli
+
 EXPOSE 8081
+
 ENTRYPOINT ["java", "-jar", "app.jar"]

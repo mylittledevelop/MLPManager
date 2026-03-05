@@ -8,6 +8,7 @@ import gg.mylittleplanet.manager.ptero.dto.app.LocationDto;
 import gg.mylittleplanet.manager.ptero.dto.app.NodeDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -22,7 +23,7 @@ public class NodeReconciler {
     private final ManagerConfig config;
     private final WingsConfigWriter wingsConfigWriter;
 
-    public NodeDto reconcile(LocationDto location, ApplyResult result) {
+    public @NotNull NodeDto reconcile(@NotNull LocationDto location, @NotNull ApplyResult result) {
         final NodeDefinitionConfig nodeCfg = config.getNode();
         final List<NodeDto> nodes = appClient.listNodes();
 

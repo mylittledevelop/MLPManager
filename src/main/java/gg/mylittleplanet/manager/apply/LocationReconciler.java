@@ -5,6 +5,7 @@ import gg.mylittleplanet.manager.ptero.PteroAppClient;
 import gg.mylittleplanet.manager.ptero.dto.app.LocationDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -18,7 +19,7 @@ public class LocationReconciler {
     private final PteroAppClient appClient;
     private final ManagerConfig config;
 
-    public LocationDto reconcile(ApplyResult result) {
+    public @NotNull LocationDto reconcile(@NotNull ApplyResult result) {
         final String locationName = config.getNode().getLocationName();
         final List<LocationDto> locations = appClient.listLocations();
 

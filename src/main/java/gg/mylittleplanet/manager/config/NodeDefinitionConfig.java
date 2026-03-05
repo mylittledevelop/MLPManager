@@ -1,15 +1,25 @@
 package gg.mylittleplanet.manager.config;
 
 import lombok.Data;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.stream.IntStream;
 
 @Data
 public class NodeDefinitionConfig {
+    @Nullable
     private String name;
+    
+    @Nullable
     private String locationName;
+    
+    @Nullable
     private String fqdn;
+    
+    @Nullable
     private PortRange portRange;
+    
+    @Nullable
     private ResourcesConfig resources;
 
     @Data
