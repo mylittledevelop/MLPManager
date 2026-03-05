@@ -1,0 +1,33 @@
+# ── MLPManager (Pterodactyl Manager) ───────────────────────────────────
+# Updated configuration that properly mounts config.yml and uses correct port
+
+  mlp-manager:
+    build:
+      context: ./MLPManager
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - ptero-internal
+    ports:
+      - "8081:8081"  # Changed from 8080:8080 to match application.yml
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/pterodactyl:/var/lib/pterodactyl
+      - /etc/pterodactyl:/etc/pterodactyl
+      - ./MLPManager/config.yml:/app/config.yml:ro  # Mount config file into container
+    depends_on:
+      panel:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+
+# REMOVE these environment variables - they're not being used:
+#   environment:
+#     PTERODACTYL_PANEL_URL: "http://panel:80"
+#     PTERODACTYL_API_KEY: ${PTERODACTYL_API_KEY}
+#     SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/panel"
+#     SPRING_DATASOURCE_USERNAME: pterodactyl
+#     SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+#     SPRING_REDIS_HOST: ptero-redis
+#     SPRING_REDIS_PORT: 6379
+
