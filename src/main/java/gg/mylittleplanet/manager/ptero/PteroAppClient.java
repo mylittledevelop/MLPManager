@@ -163,9 +163,8 @@ public class PteroAppClient {
                 request,
                 new TypeReference<>() {}
         );
-        if (response == null) {
+        if (response == null) 
             throw new PteroApiException("Server creation returned null response", null);
-        }
         return response.getAttributes();
     }
 
@@ -176,9 +175,8 @@ public class PteroAppClient {
                 request,
                 new TypeReference<>() {}
         );
-        if (response == null) {
+        if (response == null) 
             throw new PteroApiException("Startup update returned null response", null);
-        }
         return response.getAttributes();
     }
 
