@@ -82,6 +82,10 @@ manager:
   infrastructure:
     wings-container-name: "mlpinfra-wings-1"
     wings-config-path: "/etc/pterodactyl/config.yml"
+    manage-wings-container: true
+    wings-restart-timeout-seconds: 30
+    wings-ready-timeout-seconds: 60
+    wings-ready-poll-interval-seconds: 2
 
   network:
     startup-order:
